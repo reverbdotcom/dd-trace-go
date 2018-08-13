@@ -10,7 +10,7 @@ package sqlx // import "gopkg.in/DataDog/dd-trace-go.v1/contrib/jmoiron/sqlx"
 import (
 	sqltraced "gopkg.in/DataDog/dd-trace-go.v1/contrib/database/sql"
 
-	"github.com/jmoiron/sqlx"
+	"github.com/reverbdotcom/sqlx"
 )
 
 // Open opens a new (traced) connection to the database using the given driver and source.
