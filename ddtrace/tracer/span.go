@@ -150,20 +150,22 @@ func (s *span) setTagNumeric(key string, v float64) {
 // Finish closes this Span (but not its children) providing the duration
 // of its part of the tracing session.
 func (s *span) Finish(opts ...ddtrace.FinishOption) {
-	var cfg ddtrace.FinishConfig
-	for _, fn := range opts {
-		fn(&cfg)
-	}
-	var t int64
-	if cfg.FinishTime.IsZero() {
-		t = now()
-	} else {
-		t = cfg.FinishTime.UnixNano()
-	}
-	if cfg.Error != nil {
-		s.SetTag(ext.Error, cfg.Error)
-	}
-	s.finish(t)
+	s.endOnce.Do(func() {
+		var cfg ddtrace.FinishConfig
+		for _, fn := range opts {
+			fn(&cfg)
+		}
+		var t int64
+		if cfg.FinishTime.IsZero() {
+			t = now()
+		} else {
+			t = cfg.FinishTime.UnixNano()
+		}
+		if cfg.Error != nil {
+			s.SetTag(ext.Error, cfg.Error)
+		}
+		s.finish(t)
+	})
 }
 
 // SetOperationName sets or changes the operation name.
