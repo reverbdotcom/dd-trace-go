@@ -6,18 +6,12 @@ import (
 	"strconv"
 )
 
-var errorPrefix = fmt.Sprintf("Datadog Tracer Error (%s): ", tracerVersion)
+var errorPrefix = "Datadog Tracer Error (v2): "
 
 type traceEncodingError struct{ context error }
 
 func (e *traceEncodingError) Error() string {
 	return fmt.Sprintf("error encoding trace: %s", e.context)
-}
-
-type spanBufferFullError struct{}
-
-func (e *spanBufferFullError) Error() string {
-	return fmt.Sprintf("trace span cap (%d) reached, dropping trace", traceMaxSize)
 }
 
 type dataLossError struct {

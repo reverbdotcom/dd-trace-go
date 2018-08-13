@@ -1,5 +1,3 @@
-//go:generate msgp -unexported -marshal=false -o=span_msgp.go -tests=false
-
 package tracer
 
 import (
@@ -10,25 +8,29 @@ import (
 	"sync"
 	"time"
 
-	"github.com/tinylib/msgp/msgp"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace"
 	"gopkg.in/DataDog/dd-trace-go.v1/ddtrace/ext"
 )
 
-type (
-	// spanList implements msgp.Encodable on top of a slice of spans.
-	spanList []*span
-
-	// spanLists implements msgp.Decodable on top of a slice of spanList.
-	// This type is only used in tests.
-	spanLists []spanList
-)
-
-var (
-	_ ddtrace.Span   = (*span)(nil)
-	_ msgp.Encodable = (*spanList)(nil)
-	_ msgp.Decodable = (*spanLists)(nil)
-)
+// Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
+//func (z *span) Msgsize() (s int) {
+//s = 1 + 5 + msgp.StringPrefixSize + len(z.Name) + 8 + msgp.StringPrefixSize + len(z.Service) + 9 + msgp.StringPrefixSize + len(z.Resource) + 5 + msgp.StringPrefixSize + len(z.Type) + 6 + msgp.Int64Size + 9 + msgp.Int64Size + 5 + msgp.MapHeaderSize
+//if z.Meta != nil {
+//for za0001, za0002 := range z.Meta {
+//_ = za0002
+//s += msgp.StringPrefixSize + len(za0001) + msgp.StringPrefixSize + len(za0002)
+//}
+//}
+//s += 8 + msgp.MapHeaderSize
+//if z.Metrics != nil {
+//for za0003, za0004 := range z.Metrics {
+//_ = za0004
+//s += msgp.StringPrefixSize + len(za0003) + msgp.Float64Size
+//}
+//}
+//s += 8 + msgp.Uint64Size + 9 + msgp.Uint64Size + 10 + msgp.Uint64Size + 6 + msgp.Int32Size
+//return
+//}
 
 // span represents a computation. Callers must call Finish when a span is
 // complete to ensure it's submitted.
@@ -48,8 +50,7 @@ type span struct {
 	ParentID uint64             `msg:"parent_id"`         // identifier of the span's direct parent
 	Error    int32              `msg:"error"`             // error status of the span; 0 means no errors
 
-	finished bool         `msg:"-"` // true if the span has been submitted to a tracer.
-	context  *spanContext `msg:"-"` // span propagation context
+	context *spanContext `msg:"-"` // span propagation context
 }
 
 // Context yields the SpanContext for this Span. Note that the return
@@ -74,12 +75,6 @@ func (s *span) BaggageItem(key string) string {
 func (s *span) SetTag(key string, value interface{}) {
 	s.Lock()
 	defer s.Unlock()
-	// We don't lock spans when flushing, so we could have a data race when
-	// modifying a span as it's being flushed. This protects us against that
-	// race, since spans are marked `finished` before we flush them.
-	if s.finished {
-		return
-	}
 	if key == ext.Error {
 		s.setTagError(value)
 		return
@@ -182,23 +177,14 @@ func (s *span) SetOperationName(operationName string) {
 func (s *span) finish(finishTime int64) {
 	s.Lock()
 	defer s.Unlock()
-	// We don't lock spans when flushing, so we could have a data race when
-	// modifying a span as it's being flushed. This protects us against that
-	// race, since spans are marked `finished` before we flush them.
-	if s.finished {
-		// already finished
-		return
-	}
 	if s.Duration == 0 {
 		s.Duration = finishTime - s.Start
 	}
-	s.finished = true
-
 	if !s.context.sampled {
 		// not sampled
 		return
 	}
-	s.context.finish()
+	// todo
 }
 
 // String returns a human readable representation of the span. Not for

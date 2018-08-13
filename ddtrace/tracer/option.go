@@ -28,9 +28,6 @@ type config struct {
 	// all spans.
 	globalTags map[string]interface{}
 
-	// transport specifies the Transport interface which will be used to send data to the agent.
-	transport transport
-
 	// propagator propagates span context cross-process
 	propagator Propagator
 }
