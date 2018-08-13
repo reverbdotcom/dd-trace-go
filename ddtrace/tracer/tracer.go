@@ -72,6 +72,9 @@ func newTracer(opts ...StartOption) *tracer {
 	if c.propagator == nil {
 		c.propagator = NewPropagator(nil)
 	}
+	if c.exporter == nil {
+		c.exporter = newDefaultExporter(c.agentAddr)
+	}
 	t := &tracer{config: c}
 	return t
 }
